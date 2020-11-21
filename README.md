@@ -1,6 +1,6 @@
 # Assignment 3  --Book Recommendation
 ![](images/goodrreads.jpg)
-- The goal of the assignment is to build a book recommendation engine that based on the input query, which Simply describe the kind of book we are looking for by specifying book title, author, etc.. and the search engine returns similar 'likes' pulled from the best books ever list of GoodReads.
+**The goal of the assignment is to build a book recommendation engine that based on the input query, which Simply describe the kind of book we are looking for by specifying book title, author, etc.. and the search engine returns similar 'likes' pulled from the best books ever list of GoodReads**
 
 ## Data collection
 - To this end we have to build our own dataset and the search engine have to run on text documents
