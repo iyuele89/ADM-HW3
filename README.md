@@ -1,5 +1,5 @@
 # Assignment 3  --Book Recommendation
-![](images/goodrreads.jpg)
+![](images/goodrreads.jpg)<br/>
 **The goal of the assignment is to build a book recommendation engine that based on the input query, which Simply describe the kind of book we are looking for by specifying book title, author, etc.. and the search engine returns similar 'likes' pulled from the best books ever list of GoodReads**
 
 ## Data collection
