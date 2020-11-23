@@ -71,7 +71,7 @@ class DataCollector:
                 try:
                     driver.get(url)
                     page_html = driver.page_source
-                    with open(os.path.join(self.html_dir, f'{i % 100 + 1}.html'), 'w') as out_file:
+                    with open(os.path.join(self.html_dir, f'article_{i + 1:05d}.html'), 'w') as out_file:
                         out_file.write(page_html)
                 except:
                     continue
