@@ -2,6 +2,7 @@ import os
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from tqdm import tqdm
+import datetime
 
 driver = None
 
@@ -65,7 +66,7 @@ class DataCollector:
             except:
                 print('Error: reached file end!')
                 exit(-1)
-            for url, i in tqdm(zip(urls, range(start_from, stop_at))): # 
+            for url, i in zip(urls, tqdm(range(start_from, stop_at))): # 
                 if i % 100 == 0:
                     self.__make_dir(i // 100 + 1)
                 try:
@@ -74,6 +75,8 @@ class DataCollector:
                     with open(os.path.join(self.html_dir, f'article_{i + 1:05d}.html'), 'w') as out_file:
                         out_file.write(page_html)
                 except:
+                    with open('./log/log.csv', 'a') as log:
+                        log.write(f'[{datetime.datetime.now()}], {i+1}, {url}\n')
                     continue
             driver.close()
 
@@ -90,5 +93,5 @@ class DataCollector:
                 Stop at the end of the specified block
         """
         start_from = 0 if self.all else (self.block_number * 100 + self.page_number) * 100 + self.line_number # line from which start collecting 
-        stop_at = 30000 if self.all else (100 - self.page_number) * 100 + (100 - self.line_number) + start_from # line at which stop collecting
+        stop_at = 30000 if self.all else (100 - self.page_number) * 100 - self.line_number + start_from # line at which stop collecting
         self.__save_html_pages(start_from, stop_at)
