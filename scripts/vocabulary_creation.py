@@ -5,7 +5,7 @@ import os
 
 class FileContentGetter:
     
-    def __init__(self, data_path, file_ext='tsv'):
+    def __init__(self, data_path):
         self.__data_path = data_path
         self.__files_iter = glob.iglob(data_path)
 
@@ -61,5 +61,6 @@ class VocabularyBuilder:
 vb = VocabularyBuilder()
 vb.build_bag_of_words('../test.txt', fields=['Setting',])
 
-fg = FileContentGetter('../test.tsv')
-print(fg.get(fields=['Setting',]))
+fg = FileContentGetter('./data/html/*/*.html')
+print(fg.get(file_ext='html')[10000:10800])
+print(fg.get(file_ext='html')[10000:10200])
