@@ -1,40 +1,7 @@
 import pandas as pd 
 import glob
 import os
-
-
-class FileContentGetter:
-    
-    def __init__(self, data_path):
-        self.__data_path = data_path
-        self.__files_iter = glob.iglob(data_path)
-
-    
-    def get_files_iter(self):
-        return self.__files_iter
-
-    
-    def __get_tsv(self, fields=None) -> pd.DataFrame:
-        try:
-            return pd.read_table(next(self.__files_iter), usecols=fields, engine='c')
-        except:
-            return None
-
-    
-    def __get_html(self):
-        try:
-            file_html = open(next(self.__files_iter), 'r')
-            html = ''.join(file_html.readlines())
-            file_html.close()
-            return html
-        except:
-            return None
-
-
-    def get(self, fields=None, file_ext='tsv'):
-        if file_ext == 'tsv':
-            return self.__get_tsv(fields)
-        return self.__get_html()
+from scripts.utilities import FileContentGetter
 
 
 class VocabularyBuilder:
@@ -63,4 +30,4 @@ vb.build_bag_of_words('../test.txt', fields=['Setting',])
 
 fg = FileContentGetter('./data/html/*/*.html')
 print(fg.get(file_ext='html')[10000:10800])
-print(fg.get(file_ext='html')[10000:10200])
+
