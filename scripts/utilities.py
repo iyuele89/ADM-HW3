@@ -41,15 +41,15 @@ class FileContentGetter:
     
     def __get_html(self):
         try:
-            file_path = next(self.__files_iter)
-            dir_num = file_path.split('/')[-2]
-            file_num = file_path[-10:-5]
+            file_path = next(self.__files_iter) # get the file path
+            dir_num = file_path.split('/')[-2] # extract the folder number from the file path
+            file_num = file_path[-10:-5] # extract the file number from the file path
             file_html = open(file_path, 'r') # open the next file in __files_iter
-            html = ''.join(file_html.readlines()) # make a string conatining the whole content of the file
+            html = ''.join(file_html.readlines()) # make a string concatenatining the whole content of the file
             file_html.close()
             return html, dir_num, file_num
         except:
-            return None
+            return None, None, None # there are no more files to return
 
         
     def get_files_iter(self):

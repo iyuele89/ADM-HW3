@@ -79,8 +79,8 @@ class IndexBuilder:
         article, _ = content_getter.get(fields=fields, file_ext='tsv')
         articles = []
         while article is not None:
-            article, _ = content_getter.get(fields=fields, file_ext='tsv')
             articles.append(article)
+            article, _ = content_getter.get(fields=fields, file_ext='tsv')
         return pd.concat(articles, ignore_index=True)
     
 
