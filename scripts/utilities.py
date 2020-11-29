@@ -34,9 +34,9 @@ class FileContentGetter:
         try:
             data_path = next(self.__files_iter)
             num_file = data_path[-9:-4]
-            return pd.read_table(data_path, engine='c', delimiter='\t'), int(num_file) # read the next .tsv file in __files_iter
+            return pd.read_table(data_path, usecols=fields, engine='c', delimiter='\t'), int(num_file) # read the next .tsv file in __files_iter
         except:
-            return None
+            return None, None
 
     
     def __get_html(self):
