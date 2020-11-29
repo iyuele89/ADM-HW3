@@ -2,7 +2,7 @@ import pandas as pd
 import glob
 import os
 import nltk
-from scripts.utilities import FileContentGetter
+from utilities import FileContentGetter
 from sklearn.feature_extraction.text import TfidfVectorizer
 import json
 
@@ -40,6 +40,11 @@ class TextTools:
     def stemming(text:list):
         stemmer = nltk.stem.PorterStemmer()
         return [stemmer.stem(w) for w in text]
+
+    
+    @staticmethod
+    def pre_process(text:str):
+        return ' '.join(TextTools.stemming(TextTools.stopword(TextTools.alphanum(TextTools.tokenize(text)))))
 
 
 # class VocabularyBuilder:
@@ -109,11 +114,23 @@ class IndexBuilder:
 
     def save_inverted_index(self, file_path='./data/inverted_index_2_1_2.json', tfidf=False):
         self.inverted_index = dict()
-        for term_id in self.document_term_matrix.shape[1]:
+        for term_id in range(self.document_term_matrix.shape[1]):
             self.inverted_index[term_id] = []
-            for document_index in self.document_term_matrix.shape[0]:
+            for document_index in range(self.document_term_matrix.shape[0]):
                 self.__select_index_type(document_index, term_id, tfidf)
         with open(file_path, 'w') as out_file:
             json.dump(self.inverted_index, out_file)
 
 
+
+index_builder = IndexBuilder()
+
+dataset = index_builder.concatenate_dataset('./data/tsv/*/*.tsv', ['Plot'])
+
+dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
+
+index_builder.vectorize_dataset(dataset['Plot'])
+
+index_builder.save_vocabulary()
+
+index_builder.save_inverted_index()
