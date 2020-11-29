@@ -4,7 +4,7 @@ import re
 from utilities import FileContentGetter
 import pandas as pd
 from langdetect import detect
-
+from tqdm import tqdm
 
 
 def book_scraping(html_source): # this takes the html content and returns a list with the useful info
@@ -96,38 +96,41 @@ def book_scraping(html_source): # this takes the html content and returns a list
     return [bookTitle, bookSeries, bookAuthors, ratingValue, ratingCount, reviewCount, Plot, NumberofPages, Published, Characters, Setting, Url]
 
 
-# for i in range(1, 301):
-#     new_dir = f'./data/tsv/{i}' 
-#     if not os.path.isdir(new_dir):
-#         os.mkdir(new_dir)
+# make the folder structure
+for i in range(1, 301):
+    new_dir = f'./data/tsv/{i}' 
+    if not os.path.isdir(new_dir):
+        os.mkdir(new_dir) # create a new folder if it doesn't exist
 
 
 content_getter = FileContentGetter('./data/html/*/*.html')
 fields = ['bookTitle', 'bookSeries', 'bookAuthors', 'ratingValue', 'ratingCount', 'reviewCount',\
             'Plot', 'NumberofPages', 'Published', 'Characters', 'Setting', 'Url']
-while True:
-    html_content, dir_num, file_num = content_getter.get(file_ext='html')
+with tqdm() as pbar: # useful object to count and display the number of completed iterations
+    while True:
+        html_content, dir_num, file_num = content_getter.get(file_ext='html')
 
-    if html_content is None:
-        break
-    
-    # something went wrong during the book scraping:
-    #   * missing plot
-    #   * plot not in english
-    #   * something else
-    try:
-        book_info = book_scraping(html_content)
-    except:
-        with open('./log/log_tsv.txt', 'a') as log:
-            log.write(f'html/{dir_num}/article_{file_num}.html\n') # trace the errors
-        continue # continue the while loop from the top
-    book_info = [field.replace('\n', ' ') for field in book_info] # clean the book fields from newline chars; this prevents errors in file .tsv writing
-    data = dict.fromkeys(fields) # create a dictionary, using 'fields' as keys, to pass to a pandas.DataFrame object
-    for field, info in zip(fields, book_info):
-        data[field] = [info] # fill the dictionary
-    book_info_df = pd.DataFrame(data) # new DataFrame containing the book information
+        if html_content is None: # there are no more files; exit from the while loop
+            break
+        
+        # something went wrong during the book scraping:
+        #   * missing plot
+        #   * plot not in english
+        #   * something else
+        try:
+            book_info = book_scraping(html_content)
+        except:
+            with open('./log/log_tsv.txt', 'a') as log:
+                log.write(f'html/{dir_num}/article_{file_num}.html\n') # trace the errors
+            continue # continue the while loop from the top
+        book_info = [field.replace('\n', ' ') for field in book_info] # clean the book fields from newline chars; this prevents errors in file .tsv writing
+        data = dict.fromkeys(fields) # create a dictionary, using 'fields' as keys, to pass to a pandas.DataFrame object
+        for field, info in zip(fields, book_info):
+            data[field] = [info] # fill the dictionary
+        book_info_df = pd.DataFrame(data) # new DataFrame containing the book information
 
-    # print the DataFrame out into a .tsv file
-    # keep the  structure and nomenclature of the original HTML file
-    book_info_df.to_csv('./data/tsv/' + dir_num + '/article_' + file_num + '.tsv', sep='\t', index=False) 
+        # print the DataFrame out into a .tsv file
+        # keep the  structure and nomenclature of the original HTML file
+        book_info_df.to_csv('./data/tsv/' + dir_num + '/article_' + file_num + '.tsv', sep='\t', index=False) 
 
+        pbar.update(1) # add 1 to the number of completed iterations
