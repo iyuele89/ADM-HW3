@@ -32,17 +32,22 @@ class FileContentGetter:
     
     def __get_tsv(self, fields=None) -> pd.DataFrame: # return DataFrame or None if __files_iter is empty
         try:
-            return pd.read_table(next(self.__files_iter), usecols=fields, engine='c') # read the next .tsv file in __files_iter
+            data_path = next(self.__files_iter)
+            num_file = data_path[-9:-4]
+            return pd.read_table(data_path, engine='c', delimiter='\t'), int(num_file) # read the next .tsv file in __files_iter
         except:
             return None
 
     
     def __get_html(self):
         try:
-            file_html = open(next(self.__files_iter), 'r') # open the next file in __files_iter
+            file_path = next(self.__files_iter)
+            dir_num = file_path.split('/')[-2]
+            file_num = file_path[-10:-5]
+            file_html = open(file_path, 'r') # open the next file in __files_iter
             html = ''.join(file_html.readlines()) # make a string conatining the whole content of the file
             file_html.close()
-            return html
+            return html, dir_num, file_num
         except:
             return None
 
