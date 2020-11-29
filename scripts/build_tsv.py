@@ -103,25 +103,31 @@ def book_scraping(html_source): # this takes the html content and returns a list
 
 
 content_getter = FileContentGetter('./data/html/*/*.html')
-fields = ['bookTitle', 'bookSeries', 'bookAuthors', 'ratingValue', 'ratingCount', 'reviewCount', 'Plot', 'NumberofPages', 'Published', 'Characters', 'Setting', 'Url']
+fields = ['bookTitle', 'bookSeries', 'bookAuthors', 'ratingValue', 'ratingCount', 'reviewCount',\
+            'Plot', 'NumberofPages', 'Published', 'Characters', 'Setting', 'Url']
 while True:
     html_content, dir_num, file_num = content_getter.get(file_ext='html')
+
     if html_content is None:
         break
+    
+    # something went wrong during the book scraping:
+    #   * missing plot
+    #   * plot not in english
+    #   * something else
     try:
         book_info = book_scraping(html_content)
     except:
         with open('./log/log_tsv.txt', 'a') as log:
-            log.write(f'html/{dir_num}/article_{file_num}.html')
-        continue
-    book_info = [field.replace('\n', ' ') for field in book_info]
-    data = dict.fromkeys(fields)
+            log.write(f'html/{dir_num}/article_{file_num}.html\n') # trace the errors
+        continue # continue the while loop from the top
+    book_info = [field.replace('\n', ' ') for field in book_info] # clean the book fields from newline chars; this prevents errors in file .tsv writing
+    data = dict.fromkeys(fields) # create a dictionary, using 'fields' as keys, to pass to a pandas.DataFrame object
     for field, info in zip(fields, book_info):
-        data[field] = [info]
-    book_info_df = pd.DataFrame(data)
-    book_info_df.to_csv('./data/tsv/' + dir_num + '/article_' + file_num + '.tsv', sep='\t', index=False)
+        data[field] = [info] # fill the dictionary
+    book_info_df = pd.DataFrame(data) # new DataFrame containing the book information
 
+    # print the DataFrame out into a .tsv file
+    # keep the  structure and nomenclature of the original HTML file
+    book_info_df.to_csv('./data/tsv/' + dir_num + '/article_' + file_num + '.tsv', sep='\t', index=False) 
 
-# content_getter = FileContentGetter('./data/html/1/article_00001.html')
-# html_content, _, _ = content_getter.get(file_ext='html')
-# print(book_scraping(html_content))
