@@ -33,10 +33,12 @@ class FileContentGetter:
     def __get_tsv(self, fields=None) -> pd.DataFrame: # return DataFrame or None if __files_iter is empty
         try:
             data_path = next(self.__files_iter)
-            num_file = data_path[-9:-4]
-            return pd.read_table(data_path, usecols=fields, engine='c', delimiter='\t'), int(num_file) # read the next .tsv file in __files_iter
+            file_num = data_path[-9:-4]
+            file_content = pd.read_table(data_path, usecols=fields, engine='c', delimiter='\t') # read the next .tsv file in __files_iter
+            file_content['file_num'] = [int(file_num)]
+            return file_content
         except:
-            return None, None
+            return None
 
     
     def __get_html(self):
@@ -45,7 +47,7 @@ class FileContentGetter:
             dir_num = file_path.split('/')[-2] # extract the folder number from the file path
             file_num = file_path[-10:-5] # extract the file number from the file path
             file_html = open(file_path, 'r') # open the next file in __files_iter
-            html = ''.join(file_html.readlines()) # make a string concatenatining the whole content of the file
+            html = ''.join(file_html.readlines()) # make a string concatenating the whole content of the file
             file_html.close()
             return html, dir_num, file_num
         except:
