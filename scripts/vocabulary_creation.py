@@ -151,7 +151,7 @@ class TextTools:
 
 
 
-
+import math
 
 
 
@@ -200,7 +200,34 @@ class IndexBuilder:
             json.dump(inverted_index, index_file)
 
 
-    def create_index_tfidf(self, dataset, file_path='./data/vocabulary.json', out_file='./data/inverted_index_2_2_1.json')
+    def create_index_tfidf(self, dataset, vocabulary_path='./data/vocabulary.json', \
+                            inv_index_path='./data/inverted_index_2_1_1.json',  \
+                            out_file='./data/inverted_index_2_2_1.json'):
+        with open(vocabulary_path, 'r') as vocabulary_file:
+            vocabulary = json.load(vocabulary_file)
+        with open(inv_index_path, 'r') as simple_i_index_file:
+            simple_i_index = json.load(simple_i_index_file)
+        tfidf = dict.fromkeys(list(map(int, simple_i_index.keys())), [])
+        for plot, document_id in zip(dataset['Plot'], dataset['file_num']):
+            words_list = plot.split(' ')
+            plot_len = len(plot)
+            for word in words_list:
+                try:
+                    if tfidf[vocabulary[word]][-1][0] != document_id:
+                        raise Exception
+                    tfidf[vocabulary[word]][-1][1] += 1 / plot_len
+                except:
+                    tfidf[vocabulary[word]].append([document_id, 0])
+        
+        n_docs = len(dataset['file_num'])
+        for key in tfidf.keys():
+            idf = math.log(n_docs / len(simple_i_index[str(key)]))
+            for i in range(len(tfidf[key])):
+                tfidf[key][i][1] = tfidf[key][i][1] * idf
+        with open(out_file, 'w') as index_file:
+            json.dump(tfidf, index_file)
+            
+                
 
 index_builder = IndexBuilder()
 
@@ -210,4 +237,6 @@ dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
 
 # index_builder.create_vocabulary(dataset)
 
-index_builder.create_index(dataset)
+# index_builder.create_index(dataset)
+
+index_builder.create_index_tfidf(dataset)
