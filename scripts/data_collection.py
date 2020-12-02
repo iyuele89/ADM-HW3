@@ -66,7 +66,7 @@ class DataCollector:
             except:
                 print('Error: reached file end!')
                 exit(-1)
-            for url, i in zip(urls, tqdm(range(start_from, stop_at))): # 
+            for url, i in zip(urls, tqdm(range(start_from, stop_at))):
                 if i % 100 == 0:
                     self.__make_dir(i // 100 + 1)
                 try:
@@ -95,3 +95,38 @@ class DataCollector:
         start_from = 0 if self.all else (self.block_number * 100 + self.page_number) * 100 + self.line_number # line from which start collecting 
         stop_at = 30000 if self.all else (100 - self.page_number) * 100 - self.line_number + start_from # line at which stop collecting
         self.__save_html_pages(start_from, stop_at)
+
+
+
+
+
+
+all_pages = input('Collect all the pages? (Write n to select a specific range) [y/n]:\t')
+
+
+if all_pages == 'y':
+    print('\n'*3)
+    dc = DataCollector(all_pages=True)
+    dc.get_html_pages()
+    
+else:
+    try:
+        block = int(input('\nProvide a block of pages number to start from (counting from 0 to 2):\t'))
+    except:
+        print('Input not valid: not an integer!')
+        exit(-1)
+
+    try:
+        page = int(input('\nProvide a page number to start from (counting from 0 to 99):\t'))
+    except:
+        print('Input not valid: not an integer!')
+        exit(-1)
+
+    try:
+        line = int(input('\nProvide a line number to start from (counting from 0 to 99):\t'))
+    except:
+        print('Input not valid: not an integer!')
+        exit(-1)
+    print('\n'*3)
+    dc = DataCollector(block_number=block, page_number=page, line_number=line)
+    dc.get_html_pages()
