@@ -217,7 +217,7 @@ class IndexBuilder:
                         raise Exception
                     tfidf[vocabulary[word]][-1][1] += 1 / plot_len
                 except:
-                    tfidf[vocabulary[word]].append([document_id, 0])
+                    tfidf[vocabulary[word]].append([document_id, 1 / plot_len])
         
         n_docs = len(dataset['file_num'])
         for key in tfidf.keys():
