@@ -1,7 +1,7 @@
 import os
 import glob
 import pandas as pd 
-
+import nltk
 
 
 class FileContentGetter:
@@ -62,3 +62,42 @@ class FileContentGetter:
         if file_ext == 'tsv': 
             return self.__get_tsv(fields)
         return self.__get_html()
+
+
+
+
+class TextTools:
+
+    @staticmethod
+    def tokenize(text):
+        return nltk.word_tokenize(text)
+
+
+    @staticmethod
+    def alphanum(text:list): 
+        text_result = []
+        for w in text:
+            if w.isalnum():
+                text_result.append(w.lower())
+        return text_result
+
+
+    @staticmethod
+    def stopword(text:list):
+        text_result = []
+        stop_words = nltk.corpus.stopwords.words('english')
+        for w in text:
+            if w not in stop_words:
+                text_result.append(w)
+        return text_result
+
+
+    @staticmethod
+    def stemming(text:list):
+        stemmer = nltk.stem.PorterStemmer()
+        return [stemmer.stem(w) for w in text]
+
+    
+    @staticmethod
+    def pre_process(text:str):
+        return ' '.join(TextTools.stemming(TextTools.stopword(TextTools.alphanum(TextTools.tokenize(text)))))

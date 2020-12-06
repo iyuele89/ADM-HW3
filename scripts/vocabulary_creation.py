@@ -2,156 +2,16 @@ import pandas as pd
 import glob
 import os
 import nltk
-from utilities import FileContentGetter
-from sklearn.feature_extraction.text import TfidfVectorizer
+from utilities import FileContentGetter, TextTools
 import json
-
-
-nltk.download('punkt')
-nltk.download('stopwords') 
-
-class TextTools:
-
-    @staticmethod
-    def tokenize(text):
-        return nltk.word_tokenize(text)
-
-
-    @staticmethod
-    def alphanum(text:list): 
-        text_result = []
-        for w in text:
-            if w.isalnum():
-                text_result.append(w.lower())
-        return text_result
-
-
-    @staticmethod
-    def stopword(text:list):
-        text_result = []
-        stop_words = nltk.corpus.stopwords.words('english')
-        for w in text:
-            if w not in stop_words:
-                text_result.append(w)
-        return text_result
-
-
-    @staticmethod
-    def stemming(text:list):
-        stemmer = nltk.stem.PorterStemmer()
-        return [stemmer.stem(w) for w in text]
-
-    
-    @staticmethod
-    def pre_process(text:str):
-        return ' '.join(TextTools.stemming(TextTools.stopword(TextTools.alphanum(TextTools.tokenize(text)))))
-
-
-# class VocabularyBuilder:
-
-#     def __init__(self):
-#         pass
-
-
-#     def __save_vocabulary(self, words_list, documents_list):
-#         bag_of_words = pd.DataFrame({'words':words_list, 'documents':documents_list})
-        
-#         bag_of_words.to_json('./data/vocabulary.json')
-
-    
-#     def build_bag_of_words(self, data_path, fields):
-#         content_getter = FileContentGetter(data_path)
-#         dataframe, num_file = content_getter.get(fields=fields, file_ext='tsv')
-#         words_list = []
-#         documents_list = []
-#         while dataframe is not None:
-#             for field in fields:
-#                 words_list += stemming(stopword(alphanum(tokenize(dataframe.at[0, field])))) # add text processing
-#                 documents_list += [num_file]*len(words_list)
-#             dataframe, num_file = content_getter.get(fields=fields, file_ext='tsv')
-#         self.__save_vocabulary(words_list, documents_list)
-
-
-
-# class IndexBuilder:
-
-#     def __init__(self, vocabulary=None):
-#         self.count_vect = TfidfVectorizer(vocabulary=vocabulary, use_idf=True)
-
-
-#     def concatenate_dataset(self, data_path, fields):
-#         content_getter = FileContentGetter(data_path)
-#         article = content_getter.get(fields=fields, file_ext='tsv')
-#         articles = []
-#         while article is not None:
-#             articles.append(article)
-#             article= content_getter.get(fields=fields, file_ext='tsv')
-#         return pd.concat(articles, ignore_index=True).sort_values(by='file_num')
-    
-
-#     def vectorize_dataset(self, dataset):
-#         self.document_term_matrix = self.count_vect.fit_transform(dataset)
-
-
-#     def save_vocabulary(self, file_path='./data/vocabulary.json'):
-#         with open(file_path, 'w') as vocabulary:
-#             json.dump(self.count_vect.vocabulary_, vocabulary)
-
-
-#     def load_vocabulary(self, file_path='./data/vocabulary.json'):
-#         with open(file_path, 'r') as vocabulary:
-#             vocabulary = json.load(vocabulary)
-#             self.count_vect = TfidfVectorizer(vocabulary=vocabulary, use_idf=True)
-    
-
-#     def __select_index_type(self, document_index, document_number, term_id, tfidf):
-#         if tfidf:
-#             self.inverted_index[term_id].append((document_number, self.document_term_matrix[document_index, term_id]))
-#         else:
-#             if self.document_term_matrix[document_index, term_id] != 0:
-#                 self.inverted_index[term_id].append(document_number)
-
-
-#     def save_inverted_index(self, document_numbers, file_path='./data/inverted_index_2_1_2.json', tfidf=False):
-#         self.inverted_index = dict()
-#         for term_id in range(self.document_term_matrix.shape[1]):
-#             self.inverted_index[term_id] = []
-#             for document_index, document_number in zip(range(self.document_term_matrix.shape[0]), document_numbers):
-#                 self.__select_index_type(document_index, document_number, term_id, tfidf)
-#         with open(file_path, 'w') as out_file:
-#             json.dump(self.inverted_index, out_file)
-
-
-
-# index_builder = IndexBuilder()
-
-# dataset = index_builder.concatenate_dataset('./data/tsv/*/*.tsv', ['Plot'])
-
-# dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
-
-# index_builder.vectorize_dataset(dataset['Plot'])
-
-# index_builder.save_vocabulary()
-
-# index_builder.save_inverted_index(dataset['file_num'])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+from tqdm import tqdm
 import math
+import random
+
+# nltk.download('punkt')
+# nltk.download('stopwords') 
+
+
 
 
 
@@ -162,43 +22,53 @@ class IndexBuilder:
 
 
     def concatenate_dataset(self, data_path, fields):
-        content_getter = FileContentGetter(data_path)
-        article = content_getter.get(fields=fields, file_ext='tsv')
+        content_getter = FileContentGetter(data_path) # helper object to get the content of .tsv files
+        article = content_getter.get(fields=fields, file_ext='tsv') # initialize article
         articles = []
-        while article is not None:
-            articles.append(article)
-            article= content_getter.get(fields=fields, file_ext='tsv')
-        return pd.concat(articles, ignore_index=True).sort_values(by='file_num')
+        while article is not None: # content_getter.get() returns None if there are no more files
+            articles.append(article) # list of DataFrames containing articles
+            article= content_getter.get(fields=fields, file_ext='tsv') # get an article
+        return pd.concat(articles, ignore_index=True).sort_values(by='file_num') # concatenate the DataFrames and sort them by article number
 
 
     def create_vocabulary(self, dataset, file_path='./data/vocabulary.json'):
-        vocabulary = dict()
-        term_id = 0
+        vocabulary = dict() # create the vocabualary as dictionary; convenient data structure to produce a JSON file as output 
+        term_id = 0 # counter for term IDs
         for plot in dataset['Plot']:
-            words_list = plot.split(' ')
+            words_list = plot.split(' ') # split the plot into words
             for word in words_list:
-                if word not in vocabulary:
-                    vocabulary[word] = term_id
-                    term_id += 1
+                if word not in vocabulary: # a word is encountered for the very first time
+                    vocabulary[word] = term_id # assign an ID to the word
+                    term_id += 1 # increase ID
         with open(file_path, 'w') as vocabulary_file:
-            json.dump(vocabulary, vocabulary_file)
+            json.dump(vocabulary, vocabulary_file) # save the vocabulary into a JSON file
                 
 
     def create_index(self, dataset, file_path='./data/vocabulary.json', out_file='./data/inverted_index_2_1_1.json'):
         with open(file_path, 'r') as vocabulary_file:
-            vocabulary = json.load(vocabulary_file)
+            vocabulary = json.load(vocabulary_file) # open the vocabulary and store it into a dictionary
         inverted_index = dict()
         for plot, document_id in zip(dataset['Plot'], dataset['file_num']):
-            words_list = plot.split(' ')
+            words_list = plot.split(' ') # list of words in plot 
             for word in words_list:
-                if vocabulary[word] not in inverted_index:
-                    inverted_index[vocabulary[word]] = []
-                inverted_index[vocabulary[word]].append(document_id)
+                if vocabulary[word] not in inverted_index: # a word is encoutnered for the very first time
+                    inverted_index[vocabulary[word]] = [] # initialize the word's posting list
+                inverted_index[vocabulary[word]].append(document_id) # append the document number to the posting list
         for key in inverted_index.keys():
-            inverted_index[key] = sorted(list(set(inverted_index[key])))
+            inverted_index[key] = sorted(list(set(inverted_index[key]))) # keep unique values into posting lists and sort them in ascending order
         with open(out_file, 'w') as index_file:
-            json.dump(inverted_index, index_file)
+            json.dump(inverted_index, index_file) # dump the inverted index dictionary into a JSON file
 
+    
+    def store_idf(self, n_docs, i_idx_path, out_path):
+        with open(i_idx_path, 'r') as i_idx_file:
+            i_idx = json.load(i_idx_file)
+        idf = dict()
+        for key in tqdm(i_idx.keys()):
+            idf[key] = round(math.log(n_docs / len(i_idx[key])), 3)
+        with open(out_path, 'w') as out_file:
+            json.dump(idf, out_file)
+            
 
     def create_index_tfidf(self, dataset, vocabulary_path='./data/vocabulary.json', \
                             inv_index_path='./data/inverted_index_2_1_1.json',  \
@@ -207,31 +77,33 @@ class IndexBuilder:
             vocabulary = json.load(vocabulary_file)
         with open(inv_index_path, 'r') as simple_i_index_file:
             simple_i_index = json.load(simple_i_index_file)
-        tfidf = dict.fromkeys(list(map(int, simple_i_index.keys())), [])
-        for plot, document_id in zip(dataset['Plot'], dataset['file_num']):
+        with open('./data/precomputed/idf.json') as idf_file:
+            idf = json.load(idf_file)
+        i_index_tfidf = {key : [] for key in list(map(int, simple_i_index.keys()))}
+        doc_magn = dict()
+        for plot, document_id in tqdm(zip(dataset['Plot'], dataset['file_num'])):
+            doc_magn[document_id] = 0
             words_list = plot.split(' ')
-            plot_len = len(plot)
-            for word in words_list:
-                try:
-                    if tfidf[vocabulary[word]][-1][0] != document_id:
-                        raise Exception
-                    tfidf[vocabulary[word]][-1][1] += 1 / plot_len
-                except:
-                    tfidf[vocabulary[word]].append([document_id, 1 / plot_len])
-        
-        n_docs = len(dataset['file_num'])
-        for key in tfidf.keys():
-            idf = math.log(n_docs / len(simple_i_index[str(key)]))
-            for i in range(len(tfidf[key])):
-                tfidf[key][i][1] = tfidf[key][i][1] * idf
+            plot_len = len(words_list)
+            words = pd.Series(words_list, name='words_count').value_counts()
+            for word, count in zip(words.index, words):
+                tfidf = round(count / plot_len * idf[str(vocabulary[word])], 3)
+                i_index_tfidf[vocabulary[word]].append([document_id, tfidf])
+                doc_magn[document_id] += tfidf**2
+            doc_magn[document_id] = math.sqrt(doc_magn[document_id])
         with open(out_file, 'w') as index_file:
-            json.dump(tfidf, index_file)
+            json.dump(i_index_tfidf, index_file)
+        with open('./data/precomputed/doc_magnitude.json', 'w') as doc_magn_file:
+            json.dump(doc_magn, doc_magn_file)
             
+
                 
 
 index_builder = IndexBuilder()
 
 dataset = index_builder.concatenate_dataset('./data/tsv/*/*.tsv', fields=None)
+
+dataset = dataset[dataset['Plot'].notnull()]
 
 dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
 
@@ -240,3 +112,5 @@ dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
 # index_builder.create_index(dataset)
 
 index_builder.create_index_tfidf(dataset)
+
+# index_builder.store_idf(len(dataset['Plot']), './data/inverted_index_2_1_1.json', './data/precomputed/idf.json')
