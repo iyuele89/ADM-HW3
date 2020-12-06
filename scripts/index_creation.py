@@ -5,7 +5,7 @@ import os
 
 import nltk
 import pandas as pd
-from tqdm import tqdm
+from tqdm import tqdm # nice progress bar or 
 
 from scripts.utilities import FileContentGetter, TextTools
 
@@ -72,49 +72,30 @@ class IndexBuilder:
         with open(self.i_index_path, 'r') as simple_i_index_file:
             simple_i_index = json.load(simple_i_index_file)
         with open('./data/precomputed/idf.json', 'r') as idf_file:
-            idf = json.load(idf_file)
-        i_index_tfidf = {key : [] for key in list(map(int, simple_i_index.keys()))}
-        doc_magn = dict()
-        for plot, document_id in tqdm(zip(dataset['Plot'], dataset['file_num'])):
-            doc_magn[document_id] = 0
-            words_list = plot.split(' ')
+            idf = json.load(idf_file) # precomputed IDF
+        i_index_tfidf = {key : [] for key in list(map(int, simple_i_index.keys()))} # create a dictionary with the keys of the first inverted index
+        doc_magn = dict() # dictionary that is going to hold the documents' magnitude
+        for plot, document_id in tqdm(zip(dataset['Plot'], dataset['file_num'])): # for each record (book)
+            doc_magn[document_id] = 0 # initialize the magnitude 
+            words_list = plot.split(' ') # split the plot into the list of its words
             plot_len = len(words_list)
-            words = pd.Series(words_list, name='words_count').value_counts()
+            words = pd.Series(words_list, name='words_count').value_counts() # count the freaquency of each word
             for word, count in zip(words.index, words):
-                tfidf = round(count / plot_len * idf[str(vocabulary[word])], 3)
-                i_index_tfidf[vocabulary[word]].append([document_id, tfidf])
-                doc_magn[document_id] += tfidf**2
-            doc_magn[document_id] = math.sqrt(doc_magn[document_id])
+                tfidf = round(count / plot_len * idf[str(vocabulary[word])], 3) # compute the TF-IDF
+                i_index_tfidf[vocabulary[word]].append([document_id, tfidf]) 
+                doc_magn[document_id] += tfidf**2 # take the square of each component of the document vector (cfr. bag of words)
+            doc_magn[document_id] = math.sqrt(doc_magn[document_id]) # compute the magnitude
         with open(self.i_index_tfidf_path, 'w') as index_file:
-            json.dump(i_index_tfidf, index_file)
+            json.dump(i_index_tfidf, index_file) # save the inverted index into a JSON file
         with open('./data/precomputed/doc_magnitude.json', 'w') as doc_magn_file:
-            json.dump(doc_magn, doc_magn_file)
+            json.dump(doc_magn, doc_magn_file) # save the documents' magnitudes into a JSON file
 
 
-    def store_idf(self, n_docs, i_idx_path, out_path):
+    def store_idf(self, n_docs, i_idx_path, out_path): # compute and save the IDF of the words
         with open(i_idx_path, 'r') as i_idx_file:
             i_idx = json.load(i_idx_file)
         idf = dict()
         for key in tqdm(i_idx.keys()):
-            idf[key] = round(math.log(n_docs / len(i_idx[key])), 3)
+            idf[key] = round(math.log(n_docs / len(i_idx[key])), 3) # the number of document in which a word is present is equal to the length of its posting list
         with open(out_path, 'w') as out_file:
-            json.dump(idf, out_file)
-            
-
-                
-
-# index_builder = IndexBuilder()
-
-# dataset = index_builder.concatenate_dataset('./data/tsv/*/*.tsv', fields=None)
-
-# dataset = dataset[dataset['Plot'].notnull()]
-
-# dataset['Plot'] = dataset['Plot'].map(TextTools.pre_process)
-
-# index_builder.create_vocabulary(dataset)
-
-# index_builder.create_index(dataset)
-
-# index_builder.create_index_tfidf(dataset)
-
-# index_builder.store_idf(len(dataset['Plot']), './data/inverted_index_2_1_1.json', './data/precomputed/idf.json')
+            json.dump(idf, out_file) # save the IDF of the words into a JSON file

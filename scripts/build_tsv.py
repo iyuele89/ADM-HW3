@@ -5,7 +5,7 @@ from utilities import FileContentGetter
 import pandas as pd
 import spacy
 from spacy_fastlang import LanguageDetector
-from tqdm import tqdm
+from tqdm import tqdm # nice progress bar
 
 
 
