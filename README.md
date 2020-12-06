@@ -30,3 +30,19 @@ Create two different Search Engines that, given a query, it pulls a list of book
 ## Script descriptions
 - ADM-HW3.ipynb
   - Jupyter notebook script that contains the solutions to the given assignment 
+
+
+## Content of the repository
+- data/ :  
+  - vocabulary.json : vocabulary
+  - inverted_index_2_1_1.json : simple inverted index
+  - inverted_index_2_2_1.json : TF-IDF inverted index
+  - url_list.txt
+  - precomputed/ : doc_magnitude.json, idf.json
+- scripts/ : 
+  - build_tsv.py
+  - data_collection.py
+  - index_creation.py
+  - search_engine.py
+  - utilities.py
+- main_notebook.ipynb
